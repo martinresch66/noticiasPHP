@@ -1,8 +1,10 @@
 <?php
     session_start();
         extract($_REQUEST);
-    if (!isset($_SESSION['usuario_logueado']))
+    if (!isset($_SESSION['usuario_logueado']) || $_SESSION['tipo_usuario'] != 'admin') {
         header("location:index.php");
+        exit();
+    }
 
     require("conexion.php");
     $conexion = mysqli_connect($server_db, $usuario_db, $password_db)
@@ -16,6 +18,7 @@
     $password=mysqli_real_escape_string($conexion,$password);
     $nombre=mysqli_real_escape_string($conexion,$nombre);
     $apellido=mysqli_real_escape_string($conexion,$apellido);
+    $tipo_usuario = mysqli_real_escape_string($conexion, $tipo_usuario);
    
 
     //incriptar password
@@ -25,7 +28,7 @@
     /* crypt es una funci�n que encripta un string dado ($usuario) a partir de un substring
     ($salt) que lo toma como semilla de encriptaci�n en este caso son dos caracteres*/
     $clave_crypt = crypt ($password, $salt);
-    $instruccion="insert into usuarios (nombre,apellido,usuario,password) values ('$nombre','$apellido','$usuario','$clave_crypt')";
+    $instruccion="insert into usuarios (nombre,apellido,usuario,password,tipo_usuario) values ('$nombre','$apellido','$usuario','$clave_crypt','$tipo_usuario')";
     $consulta=mysqli_query($conexion,$instruccion) 
             or die("no pudo insertar");
     //metodo 2
@@ -33,5 +36,5 @@
     mysqli_stmt_bind_param($stmt,'sssssds', $titulo,$copete,$cuerpo,$imagen,$categoria,$id_usuario,$fecha);
    mysqli_stmt_execute($stmt);*/
     mysqli_close($conexion);
-   header("location:usuarios.php?mensaje=Guardo");
+   header("location:usuarios.php?mensaje=Guardado exitoso");
 ?>  

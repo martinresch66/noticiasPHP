@@ -20,20 +20,35 @@
     mysqli_select_db($conexion, $base_db)
         or die("No se puede seleccionar la base de datos");
     
-    // 7. Prepara la instrucción SQL de tipo DELETE para borrar de la tabla 'noticias' únicamente el registro cuyo ID coincida con el que llegó por la URL.
-    $instruccion="delete from noticias where id_noticia='$id_noticia'";
+    //Buscamos de quién es la noticia antes de borrarla
+    $sql_check = "SELECT id_usuario FROM noticias WHERE id_noticia = '$id_noticia'";
+    $res_check = mysqli_query($conexion, $sql_check);
+    $row_noticia = mysqli_fetch_array($res_check);
+    
+    //solo elimina si es admin o duenio de la noticia
+    if ($_SESSION['tipo_usuario'] == 'admin' || $_SESSION['id_usuario'] == $row_noticia['id_usuario']) {
+        // 7. Prepara la instrucción SQL de tipo DELETE para borrar de la tabla 'noticias' únicamente el registro cuyo ID coincida con el que llegó por la URL.
+        $instruccion="delete from noticias where id_noticia='$id_noticia'";
 
-    // 8. BORRADO FÍSICO: La función 'unlink()' borra definitivamente un archivo del disco rígido del servidor. 
-    // En este caso, concatena la ruta de la carpeta con el nombre de la foto que vino por la URL para eliminar la imagen asociada a esa noticia y no dejar basura ocupando espacio.
-    unlink("../imagenes_subidas/".$imagen);
+        // 8. BORRADO FÍSICO: La función 'unlink()' borra definitivamente un archivo del disco rígido del servidor. 
+        // En este caso, concatena la ruta de la carpeta con el nombre de la foto que vino por la URL para eliminar la imagen asociada a esa noticia y no dejar basura ocupando espacio.
+        unlink("../imagenes_subidas/".$imagen);
 
-    // 9. Ejecuta la consulta SQL de eliminación en la base de datos.
-    $consulta=mysqli_query($conexion,$instruccion);
+        // 9. Ejecuta la consulta SQL de eliminación en la base de datos.
+        $consulta=mysqli_query($conexion,$instruccion);
+
+        $msg = "Borrado exitoso";
+    }
+    else{
+        // NO tiene permiso: Redirigimos con mensaje genérico 
+        $msg = "Acceso no autorizado";
+    }
     
     // 10. Cierra la conexión abierta con el servidor de base de datos para liberar recursos.
     mysqli_close($conexion);
 
     // 11. Redirige al usuario de regreso al listado de noticias, enviando un mensaje por la URL. 
     // (Nota: aquí dice "?mensaje=Guardo", pero al ser el script de borrado, lo ideal para ser prolijos sería cambiarlo por "?mensaje=Borrado").
-    header("location:noticias.php?mensaje=Guardo");
+    header("location:noticias.php?mensaje=" . urlencode($msg));
+    exit();
 ?>

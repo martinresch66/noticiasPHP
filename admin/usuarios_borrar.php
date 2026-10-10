@@ -2,8 +2,11 @@
     session_start();
     extract($_REQUEST);
 
-    if(!isset($_SESSION['usuario_logueado']))
+    // REGLA DE SEGURIDAD: Solo los administradores pueden borrar usuarios
+    if (!isset($_SESSION['usuario_logueado']) || $_SESSION['tipo_usuario'] != 'admin') {
         header("location:index.php");
+        exit();
+    }
 
     require("conexion.php");
 
@@ -19,5 +22,6 @@
 
     mysqli_close($conexion);
 
-    header("location:usuarios.php?mensaje=Usuario Borrado");
+    header("location:usuarios.php?mensaje=" . urlencode("Usuario borrado correctamente"));
+    exit();
 ?>

@@ -1,8 +1,11 @@
 <?php
     session_start();
     extract($_REQUEST);
-    if (!isset($_SESSION['usuario_logueado']))
+
+    if (!isset($_SESSION['usuario_logueado']) || $_SESSION['tipo_usuario'] != 'admin') {
         header("location:index.php");
+        exit();
+    }
 
     require("conexion.php");
     $conexion = mysqli_connect($server_db, $usuario_db, $password_db)
@@ -22,15 +25,16 @@
 
     // MÉTODO 2: Actualización con consulta preparada (Prepared Statement)
     // Usamos signos de interrogación (?) para los valores que van a ser enlazados de forma segura
-    $instruccion = "UPDATE usuarios SET nombre = ?, apellido = ?, usuario = ?, password = ? WHERE id_usuario = ?";
+    $instruccion = "UPDATE usuarios SET nombre = ?, apellido = ?, usuario = ?, password = ?, tipo_usuario = ? WHERE id_usuario = ?";
     $stmt = mysqli_prepare($conexion, $instruccion);
     
     // Vinculamos los parámetros: 'ssssi' significa 4 strings (s) y 1 entero (i) para el id_usuario
-    mysqli_stmt_bind_param($stmt, 'ssssi', $nombre, $apellido, $usuario, $clave_crypt, $id_usuario);
+    mysqli_stmt_bind_param($stmt, 'sssssi', $nombre, $apellido, $usuario, $clave_crypt, $tipo_usuario, $id_usuario);
     
     // Ejecutamos la consulta preparada
     mysqli_stmt_execute($stmt);
 
     mysqli_close($conexion);
-    header("location:usuarios.php?mensaje=Modificado");
+    header("location:usuarios.php?mensaje=Modificado Exitosamente");
+    exit();
 ?>

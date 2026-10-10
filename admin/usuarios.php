@@ -5,9 +5,11 @@
     // 2. Extrae las variables que puedan llegar por petición (por ejemplo, mensajes de éxito en la URL).
     extract($_REQUEST);
 
-    // 3. Valida si el usuario está autenticado; si no, lo expulsa al login.
-    if (!isset($_SESSION['usuario_logueado']))
+// REGLA DE SEGURIDAD: Si no está logueado o NO es admin, se va expulsado
+    if (!isset($_SESSION['usuario_logueado']) || $_SESSION['tipo_usuario'] != 'admin') {
         header("location:index.php");
+        exit();
+    }
 ?>
 
 <!DOCTYPE html>

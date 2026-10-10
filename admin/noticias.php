@@ -32,6 +32,37 @@
        ?>
        <a href="noticias_nueva.php" class="btn btn-primary">Nueva Noticia</a>
     </div>
+
+<?php 
+        // 1. Evalúa si la variable 'mensaje' está presente en la URL (método GET). 
+        // Esto ocurre cuando se redirige con un parámetro como ?mensaje=Borrado exitoso.
+        if (isset($_GET['mensaje'])){
+?> 
+    
+
+            <!-- 2. Si la condición anterior es verdadera, imprime este contenedor div estilizado 
+                con clases de Bootstrap para mostrar una alerta visual ("alert", "alert-warning" para color amarillo, 
+                "alert-dismissible" para permitir cerrarla, y "fade show" para que tenga un efecto visual suave al aparecer). -->
+            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                
+                <?php 
+                    // 3. Imprime en pantalla el texto del mensaje que viajó por la URL. 
+                    // La función 'htmlspecialchars()' es fundamental por seguridad: convierte caracteres especiales 
+                    // en entidades HTML válidas, evitando ataques de tipo XSS (Cross-Site Scripting) 
+                    // por si alguien intenta inyectar código malicioso en la URL.
+                    echo htmlspecialchars($_GET['mensaje']); 
+                ?>
+
+                <!-- 4. Dibuja el botón con forma de "X" (cierre) en la esquina derecha de la alerta. 
+                    Los atributos de Bootstrap 'data-bs-dismiss="alert"' le dan la funcionalidad de JavaScript 
+                    para que, al hacerle clic, la alerta desaparezca de la pantalla automáticamente. -->
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            
+            </div>
+<?php 
+        }
+?>
+
     <table class="table">
         <tr>
             <th>titulo</th>
@@ -63,11 +94,19 @@
             <tr>
                 <td>'.trim($resultado['titulo']).'</td>
                 <td>'.substr($resultado['copete'],0,50).'...</td>
-                <td><a href="noticias_editar.php?id_noticia='.$resultado['id_noticia'].'" class="btn btn-secondary">editar</a></td>
-                <td><a href="noticias_borrar.php?id_noticia='.$resultado['id_noticia'].'&imagen='.$resultado['imagen'].'" class="btn btn-danger" onclick="return confirm(&quot; Desea eliminar &quot;)">borrar</a></td>
-            </tr>
-            
+                
             ');
+
+            // Condición visual: Solo mostramos el botón de borrar si es admin o si el id_usuario coincide con el dueño de la noticia
+            if ($_SESSION['tipo_usuario'] == 'admin' || $_SESSION['id_usuario'] == $resultado['id_usuario']) {
+                print('<td><a href="noticias_editar.php?id_noticia='.$resultado['id_noticia'].'" class="btn btn-secondary">editar</a></td>');
+                print('<td><a href="noticias_borrar.php?id_noticia='.$resultado['id_noticia'].'&imagen='.$resultado['imagen'].'" class="btn btn-danger" onclick="return confirm(&quot;¿Desea eliminar?&quot;)">borrar</a></td>');
+            } else {
+                print('<td><span class="text-muted">Sin permisos</span></td>');
+                print('<td><span class="text-muted">Sin permisos</span></td>');
+            }
+
+            print('</tr>');
         }
         mysqli_close($conexion);
     ?>

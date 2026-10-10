@@ -21,6 +21,17 @@
         // Si no encuentra la base de datos seleccionada, detiene la ejecución con un mensaje.
         or die ("No se puede seleccionar la base de datos");
 
+    // Limpia caracteres maliciosos del nombre de usuario para evitar ataques de Inyección SQL.
+    $usuario=mysqli_real_escape_string($conexion,$usuario);
+
+    // Limpia caracteres maliciosos de la contraseña para evitar ataques de Inyección SQL.
+    $password=mysqli_real_escape_string($conexion,$password);
+
+    // Validamos que el usuario tenga al menos 2 caracteres para poder extraer el salt
+    if (strlen($usuario) < 2) {
+        header("location:index.php?mensaje=Usuario y contraseña incorrecto");
+        exit();
+    }
     // Extrae los primeros 2 caracteres del nombre de usuario para usarlos como "semilla" (salt) de encriptación.
     $salt = substr ($usuario, 0, 2);
 
@@ -30,12 +41,7 @@
     // Encripta la contraseña ingresada por el usuario utilizando la semilla ($salt) obtenida anteriormente.
     $clave_crypt = crypt ($password, $salt);/*HAY UN PROBLEMA SI PONGO LA CONTRASENIA guillermos en vez de guillermo me loguea igual!!!!!!!!!!!!!!!!!! */
 
-    // Limpia caracteres maliciosos del nombre de usuario para evitar ataques de Inyección SQL.
-    $usuario=mysqli_real_escape_string($conexion,$usuario);
-
-    // Limpia caracteres maliciosos de la contraseña para evitar ataques de Inyección SQL.
-    $password=mysqli_real_escape_string($conexion,$password);
-
+    
     // Prepara la sentencia SQL para buscar en la tabla 'usuarios' donde coincidan el nombre y la clave encriptada.
     $instruccion = "select * from usuarios where usuario = '$usuario'" .
     " and password = '$clave_crypt'";

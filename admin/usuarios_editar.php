@@ -2,8 +2,10 @@
     session_start();
     extract($_REQUEST); // Aquí rescata el id_usuario que viene por la URL (ej: usuarios_editar.php?id_usuario=3)
 
-    if (!isset($_SESSION['usuario_logueado']))
+    if (!isset($_SESSION['usuario_logueado']) || $_SESSION['tipo_usuario'] != 'admin') {
         header("location:index.php");
+        exit();
+    }
 
     // 1. Nos conectamos a la base de datos para buscar los datos actuales del usuario
     require("conexion.php");
@@ -62,6 +64,16 @@
                 <label for="password" class="form-label">Nueva Password (o dejar la misma)</label>
                 <input type="password" class="form-control" id="password" name="password" placeholder="Escribe la password">
             </div>
+
+            <!-- Selector de tipo de usuario con preselección -->
+            <div class="mb-3">
+                <label for="tipo_usuario" class="form-label">Tipo de Usuario</label>
+                <select class="form-control" id="tipo_usuario" name="tipo_usuario" required>
+                    <option value="autor" <?php if($resultado['tipo_usuario'] == 'autor') print("selected"); ?>>Autor</option>
+                    <option value="admin" <?php if($resultado['tipo_usuario'] == 'admin') print("selected"); ?>>Administrador</option>
+                </select>
+            </div>
+
 
             <div class="mb-3">
                 <input type="submit" class="btn btn-success" id="enviar" name="enviar" value="MODIFICAR">

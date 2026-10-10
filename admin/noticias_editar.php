@@ -1,8 +1,40 @@
 <?php
 session_start();
 extract($_REQUEST);
+
 if (!isset($_SESSION['usuario_logueado']))
     header("location:index.php");
+require("conexion.php");
+$conexion = mysqli_connect($server_db, $usuario_db, $password_db)
+    or die("No se puede conectar con el servidor");
+mysqli_select_db($conexion, $base_db)
+    or die("No se puede seleccionar la base de datos");
+
+// 1. Verificamos de quién es la noticia antes de dejar editar
+$sql_check = "SELECT id_usuario FROM noticias WHERE id_noticia = '$id_noticia'";
+$res_check = mysqli_query($conexion, $sql_check);
+
+if (mysqli_num_rows($res_check) == 0) {
+    mysqli_close($conexion);
+    header("location:noticias.php?mensaje=La noticia no existe");
+    exit();
+}
+
+$row_noticia = mysqli_fetch_array($res_check);
+
+// 2. ¿Es admin o el dueño? Si no, se va expulsado.
+if ($_SESSION['tipo_usuario'] != 'admin' && $_SESSION['id_usuario'] != $row_noticia['id_usuario']) {
+    mysqli_close($conexion);
+    header("location:noticias.php?mensaje=Acceso no autorizado");
+    exit();
+}
+
+// 3. Si pasa el filtro, cargamos los datos normalmente
+$instruccion="select * from noticias where id_noticia=$id_noticia";
+$consulta=mysqli_query($conexion,$instruccion) or die("no pudo consultar");
+$resultado=mysqli_fetch_array($consulta);
+mysqli_close($conexion);
+
 ?>
 
 <!DOCTYPE html>
@@ -27,22 +59,10 @@ if (!isset($_SESSION['usuario_logueado']))
         <?php require("menu.php"); ?>
         <h1>Noticias Editar</h1>
         <?php
-        require("conexion.php");
-        $conexion = mysqli_connect($server_db, $usuario_db, $password_db)
-            or die("No se puede conectar con el servidor");
-        mysqli_select_db($conexion, $base_db)
-            or die("No se puede seleccionar la base de datos");
-        $instruccion="select * from noticias where id_noticia=$id_noticia";
-        $consulta=mysqli_query($conexion,$instruccion) or die("no pudo consultar");
-        $resultado=mysqli_fetch_array($consulta);
-       
-        if(isset($mensaje))
-        print("<h3 style='color:#cc00ff'>".$mensaje."</h3>");
-        mysqli_close($conexion);
+            if(isset($mensaje))
+                print("<h3 style='color:#cc00ff'>".$mensaje."</h3>");
         ?>
         
-            
-      
         <form action="noticias_editar_guardar.php" method="post" enctype="multipart/form-data">
             <div class="mb-3">
                 <label for="titulo" class="form-label">Titulo</label>

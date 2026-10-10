@@ -1,8 +1,11 @@
 <?php
 session_start();
 extract($_REQUEST);
-if (!isset($_SESSION['usuario_logueado']))
+// REGLA DE SEGURIDAD: Solo los administradores pueden crear usuarios
+if (!isset($_SESSION['usuario_logueado']) || $_SESSION['tipo_usuario'] != 'admin') {
     header("location:index.php");
+    exit();
+}
 ?>
 
 <!DOCTYPE html>
@@ -11,7 +14,7 @@ if (!isset($_SESSION['usuario_logueado']))
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin</title>
+    <title>Admin - Nuevo Usuario</title>
     <link href="../lib/bootstrap-5.3.2/css/bootstrap.min.css" rel="stylesheet">
     <script src="../lib/bootstrap-5.3.2/js/bootstrap.bundle.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
@@ -45,12 +48,20 @@ if (!isset($_SESSION['usuario_logueado']))
                 <label for="password" class="form-label">password</label>
                 <input type="password" class="form-control" id="password" name="password" placeholder="password" required>
             </div>
+            <!-- Selector de tipo de usuario -->
+            <div class="mb-3">
+                <label for="tipo_usuario" class="form-label">Tipo de Usuario</label>
+                <select class="form-control" id="tipo_usuario" name="tipo_usuario" required>
+                    <option value="autor">Autor</option>
+                    <option value="admin">Administrador</option>
+                </select>
+            </div>
 
             <div class="mb-3">
                 <input type="submit" class="btn btn-success" id="enviar" name="enviar" value="GUARDAR">
+                <a href="usuarios.php" class="btn btn-info">Regresar</a>
             </div>
-
-
+            
         </form>
 
         <div id="librerias">
