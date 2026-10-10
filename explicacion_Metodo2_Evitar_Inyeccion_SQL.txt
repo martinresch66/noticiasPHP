@@ -1,0 +1,50 @@
+Este bloque que tu profesor dejó comentado es el **Método 2**, conocido técnicamente como **Consultas Preparadas (*Prepared Statements*)**.
+
+En la programación web moderna, este es el **estándar de oro** y la forma recomendada por los desarrolladores expertos para interactuar con bases de datos.
+
+---
+
+### ¿Qué facilita este método frente al Método 1?
+
+1. **Adiós definitivo a la Inyección SQL:** Con el método anterior (`mysqli_real_escape_string`), tenías que acordarte de limpiar cada variable a mano antes de armar la consulta. Si te olvidabas de limpiar una sola variable, abrías una puerta a un ataque. Con las consultas preparadas, **la seguridad viene de fábrica**: la base de datos trata los datos de los usuarios estrictamente como "valores" y nunca como código, por más trampas o comillas que intenten inyectar.
+2. **Código más limpio y ordenado:** Te ahorras estar concatenando cadenas de texto gigantes con puntos y comillas simples (`'...'. $variable . '...'`), lo que hace que la sentencia SQL sea mucho más legible y menos propensa a errores de tipeo.
+
+---
+
+### ¿Cómo funciona paso a paso?
+
+Si descomentas ese bloque, verás que realiza el proceso en tres pasos muy claros:
+
+#### 1. Preparar la estructura con comodines (`?`)
+
+```php
+$stmt = mysqli_prepare($conexion, "insert into noticias (titulo, copete, cuerpo, imagen, categoria, id_usuario, fecha) values (?, ?, ?, ?, ?, ?, ?)");
+
+```
+
+* En lugar de meter las variables adentro de la consulta, se colocan **signos de interrogación (`?`)** como si fueran casilleros vacíos o espacios reservados.
+* Le dices a MySQL: *"Preparame esta plantilla de código SQL, pero todavía no la ejecutes porque los datos llegan en un ratito"*. La base de datos compila la estructura de antemano.
+
+#### 2. Vincular los parámetros (`mysqli_stmt_bind_param`)
+
+```php
+mysqli_stmt_bind_param($stmt, 'sssssds', $titulo, $copete, $cuerpo, $imagen, $categoria, $id_usuario, $fecha);
+
+```
+
+* Aquí es donde "enchufas" las variables reales en los casilleros `?` en el mismo orden exacto en el que aparecen.
+* **¿Qué significa esa rareza de `'sssssds'`?** Es un código de letras que le avisa a PHP **qué tipo de dato** es cada variable para que la base de datos sepa cómo interpretarlos de forma segura:
+* **`s`** = String (Texto, como `$titulo`, `$copete`, etc.)
+* **`i` o `d**` = Integer o Double (Números, como el `$id_usuario` que es un número entero).
+* (En este caso, la cadena `'sssssds'` significa: 5 strings, 1 número/decimal, y 1 string final para la fecha).
+
+
+
+#### 3. Ejecutar la sentencia (`mysqli_stmt_execute`)
+
+```php
+mysqli_stmt_execute($stmt);
+
+```
+
+* Una vez que los datos están atados de forma segura a la consulta preparada, se dispara la orden para que MySQL guarde el registro definitivamente.

@@ -1,0 +1,7 @@
+en phpmyadmin
+
+1) crear la base de datos diariodb
+2)seleccionar la base de datos diariodb
+3) importar los datos del archivo diariodb.sql
+    a) podemos usar la opcion exportar 
+    b) abrir el archivo y copiar el contenido y pegarlo en la opcion sql

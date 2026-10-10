@@ -1,0 +1,89 @@
+
+### El punto de partida: ¿Qué hace PHP cuando envías un archivo?
+
+Cuando en el formulario HTML pones `enctype="multipart/form-data"` y subes una foto, el navegador empaqueta ese archivo y se lo envía a Apache/PHP por detrás.
+
+En el instante exacto en que el script PHP comienza a ejecutarse, PHP hace algo mágico: **intercepta el archivo y lo guarda automáticamente en una carpeta temporal oculta del servidor** (por ejemplo, en XAMPP suele ser una carpeta temporal de Windows). Además, crea una supervariable global llamada **`$_FILES`** que funciona como una gran ficha técnica con toda la información del archivo.
+
+La estructura interna de ese array `$_FILES['imagen']` llega con estos datos:
+
+* `$_FILES['imagen']['name']` $\rightarrow$ El nombre real del archivo en tu PC (ej: `foto.jpg`).
+* `$_FILES['imagen']['type']` $\rightarrow$ El tipo MIME (ej: `image/jpeg`).
+* `$_FILES['imagen']['tmp_name']` $\rightarrow$ **¡La ruta temporal!** (ej: `C:\xampp\tmp\phpA1B2.tmp`). Es el lugar exacto donde PHP guardó el archivo momentáneamente.
+* `$_FILES['imagen']['error']` $\rightarrow$ Un código numérico (0 si salió todo bien).
+* `$_FILES['imagen']['size']` $\rightarrow$ El peso del archivo en bytes.
+
+---
+
+### Analizando línea por línea el bloque de código:
+
+#### 1. La bandera de control
+
+```php
+$copiarArchivo = false;
+
+```
+
+* **Qué hace:** Crea una variable interruptor en `false`. Sirve como una "bandera" para avisarle más abajo al programa si el usuario realmente adjuntó una imagen válida o si vino vacío.
+
+#### 2. La función de seguridad `is_uploaded_file(...)`
+
+```php
+if(is_uploaded_file($_FILES['imagen']['tmp_name']))
+
+```
+
+* **Qué es y por qué es crucial:** Esta es una función de seguridad estricta de PHP. Pregunta: *"¿El archivo que está apuntando `$_FILES['imagen']['tmp_name']` fue subido legítimamente a través de un formulario HTTP POST?"*
+* **Por qué se usa:** Evita ataques maliciosos (como los de *Inclusión de Archivos*), donde un atacante podría intentar engañar al script pasando la ruta de un archivo interno del servidor (por ejemplo, un archivo de configuración de Windows o de Linux) para robar datos. Si la ruta temporal no vino de una subida HTTP real, la función devuelve `false` y bloquea la acción.
+
+#### 3. Configurando el destino y el nombre único
+
+Si la validación anterior dio `true` (significa que el archivo es real y seguro), entra al bloque `if`:
+
+```php
+{
+    $nombreDirectorio = "../imagenes_subidas/";
+    $idUnico = time();
+    $nombrefichero = $idUnico . "-" . $_FILES['imagen']['name'];
+    $copiarArchivo = true;
+}
+
+```
+
+* **`$nombreDirectorio`**: Define la ruta física definitiva en el disco rígido de tu computadora (saliendo una carpeta hacia atrás con `../` para entrar a `imagenes_subidas/`).
+* **`$idUnico = time();`**: La función `time()` devuelve el **timestamp actual** (la cantidad exactísima de segundos que pasaron desde el 1 de enero de 1970 hasta este preciso milisegundo, por ejemplo: `1791586857`).
+* **Por qué se usa el timestamp:** Imagínate que tú subes una foto llamada `paisaje.jpg` hoy, y mañana otro usuario sube otra foto distinta que casualmente también se llama `paisaje.jpg`. Si las guardáramos con el mismo nombre, la segunda foto **sobre escribiría y borraría** a la primera. Al anteponerle el número de `time()`, el nombre final queda por ejemplo: `1791586857-paisaje.jpg`. ¡Garantiza que **nunca jamás** se repitan los nombres!
+* **`$copiarArchivo = true;`**: Cambia la bandera a verdadero porque ya tenemos el nombre definitivo listo para ser trasladado.
+
+#### 4. La alternativa (Si no se subió nada)
+
+```php
+else 
+   $nombrefichero = "";
+
+```
+
+* **Qué hace:** Si el usuario por algún motivo no adjuntó imagen, la variable `$nombrefichero` queda como un texto vacío (`""`).
+
+#### 5. El traslado definitivo: `move_uploaded_file()`
+
+```php
+if($copiarArchivo)
+    move_uploaded_file($_FILES['imagen']['tmp_name'], $nombreDirectorio . $nombrefichero);
+
+```
+
+* **Por qué es obligatoria esta función:** ¿Te acuerdas que al principio dijimos que PHP guarda el archivo en una carpeta temporal? **Los archivos temporales se borran solos** de la memoria del servidor apenas termina de ejecutarse el script PHP. Si no los movemos a una carpeta fija, la foto desaparecerá en un parpadeo.
+* **Qué hace `move_uploaded_file()`:** Toma el archivo que está en la ruta temporal (`$_FILES['imagen']['tmp_name']`) y lo **mueve físicamente** a su hogar definitivo (`../imagenes_subidas/1791586857-paisaje.jpg`). A partir de ese momento, la imagen ya queda grabada de forma permanente en el disco del servidor.
+
+#### 6. El impacto en la Base de Datos
+
+```php
+$instruccion = "insert into noticias (..., imagen, ...) values (..., '$nombrefichero', ...)";
+
+```
+
+* **El toque final:** Como te habrás dado cuenta, **la imagen física NO se guarda dentro de la base de datos** (guardar fotos pesadas dentro de MySQL es una pésima práctica que hace lento al sistema).
+* Lo que realmente se guarda en la base de datos, en la columna `imagen`, es **únicamente un texto con el nombre del archivo** (por ejemplo: `1791586857-paisaje.jpg`).
+* Después, cuando quieres mostrar la noticia en la página principal o en el detalle, el sistema hace un `SELECT`, rescata ese nombre de texto, y arma la etiqueta HTML combinándolo con la carpeta:
+`HTML: <img src="imagenes_subidas/1791586857-paisaje.jpg">`.
