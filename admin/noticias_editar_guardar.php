@@ -36,5 +36,5 @@
             or die("no pudo insertar");
     
     mysqli_close($conexion);
-    header("location:noticias_editar.php?mensaje=Guardo&id_noticia=".$id_noticia);
+    header("location:noticias.php?mensaje=Guardo&id_noticia=".$id_noticia);
 ?>  
